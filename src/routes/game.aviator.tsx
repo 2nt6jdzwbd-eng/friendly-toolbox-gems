@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRequireSession } from "@/lib/guard";
 import { useEffect, useRef, useState } from "react";
-import { Play, RotateCcw } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { GameHeaderStats } from "@/components/GameHeaderStats";
 import { WinFeed } from "@/components/WinFeed";

@@ -46,38 +46,45 @@ function AviatorGame() {
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const raf = useRef<number | null>(null);
+  const lastTarget = useRef<number | null>(null);
 
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
 
+  // يجيب توقع الأدمن من فايرباس تلقائيًا ويحدّثه كل ما يتغير
   useEffect(() => {
-    if (!isFirebaseMode()) setBusy(true);
-  }, []);
-
-  const start = async () => {
     if (!isFirebaseMode()) {
       setBusy(true);
       return;
     }
-    if (raf.current) cancelAnimationFrame(raf.current);
-    const remote = await fetchAviatorOdd();
-    if (!remote) return;
-    const target = remote;
-    const t0 = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - t0) / DUR);
-      setProgress(t);
-      setOdd(1 + (target - 1) * t);
-      if (t < 1) raf.current = requestAnimationFrame(step);
+    let stop = false;
+    const animateTo = (target: number) => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+      const from = lastTarget.current ?? 1;
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / DUR);
+        setProgress(t);
+        setOdd(from + (target - from) * t);
+        if (t < 1) raf.current = requestAnimationFrame(step);
+      };
+      raf.current = requestAnimationFrame(step);
     };
-    raf.current = requestAnimationFrame(step);
-  };
-
-
-  const reset = () => {
-    if (raf.current) cancelAnimationFrame(raf.current);
-    setProgress(0);
-    setOdd(1);
-  };
+    const poll = async () => {
+      const remote = await fetchAviatorOdd();
+      if (stop || !remote) return;
+      if (remote !== lastTarget.current) {
+        lastTarget.current = remote;
+        animateTo(remote);
+      }
+    };
+    poll();
+    const timer = setInterval(poll, 2000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
+  }, []);
 
   const pts: string[] = [];
   for (let i = 0; i <= 40; i++) {

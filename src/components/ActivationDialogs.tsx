@@ -1,0 +1,222 @@
+import { useEffect, useState } from "react";
+import { KeyRound, Ticket, ShieldCheck, Loader2, Clock, XCircle } from "lucide-react";
+import { Overlay } from "@/components/Overlay";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  saveSession,
+  addCodeToHistory,
+  readCodeHistory,
+  isCodeValid,
+  type CodeHistoryItem,
+  type ActiveSession,
+} from "@/lib/session";
+import {
+  fetchMasterId,
+  matchesMaster,
+  enableFirebaseMode,
+  disableFirebaseMode,
+  rememberMasterId,
+  readRememberedId,
+} from "@/lib/firebase-signals";
+
+
+export function ChoiceDialog({
+  open,
+  onClose,
+  onUse,
+  onGet,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUse: () => void;
+  onGet: () => void;
+}) {
+  const rows = [
+    { label: "استخدام كود تفعيل", sub: "لديك كود من البوت", icon: KeyRound, action: onUse },
+    { label: "الحصول على كود تفعيل", sub: "احصل على كود جديد", icon: Ticket, action: onGet },
+  ];
+  return (
+    <Overlay open={open} onClose={onClose}>
+      <h3 className="mb-4 text-center text-base font-black text-foreground">اختر طريقة الدخول</h3>
+      <div className="flex flex-col gap-3">
+        {rows.map((r) => (
+          <Button
+            key={r.label}
+            onClick={r.action}
+            variant="outline"
+            className="group h-auto flex items-center justify-start gap-3 rounded-md border-border bg-card p-3 text-left transition active:scale-[0.98] hover:border-primary"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-primary/50 text-primary">
+              <r.icon className="h-5 w-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-extrabold text-foreground">{r.label}</span>
+              <span className="block text-[11px] text-muted-foreground">{r.sub}</span>
+            </span>
+          </Button>
+        ))}
+      </div>
+    </Overlay>
+  );
+}
+
+export function CodeDialog({
+  open,
+  onClose,
+  onVerified,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onVerified: (s: ActiveSession) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<CodeHistoryItem[]>([]);
+
+  useEffect(() => {
+    if (open) setHistory(readCodeHistory());
+  }, [open]);
+
+  const verifyCode = async (raw: string) => {
+    const value = raw.trim();
+    if (!value || busy) return;
+
+    const masterId = await fetchMasterId();
+    if (matchesMaster(value, masterId)) {
+      enableFirebaseMode();
+      rememberMasterId(value);
+      const s = {
+        code: value.toUpperCase(),
+        userId: "master",
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString(),
+      };
+      saveSession(s);
+      addCodeToHistory(s);
+      setHistory(readCodeHistory());
+      onVerified(s);
+      return;
+    }
+
+    // Regular code: this device stays in Firebase mode once it unlocked with the admin ID,
+    // even if the admin ID in Firebase changed afterwards.
+    const remembered = readRememberedId();
+    if (remembered) enableFirebaseMode();
+    else disableFirebaseMode();
+
+
+
+
+    setBusy(true);
+    setError(null);
+    try {
+      const { data, error: rpcError } = await (
+        supabase.rpc.bind(supabase) as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{
+          data: { status: string; user_id: string | null; expires_at: string | null }[] | null;
+          error: unknown;
+        }>
+      )("verify_activation_code", { _code: value });
+      if (rpcError) throw rpcError;
+      const res = data?.[0];
+      if (res?.status === "ok") {
+        // Bot codes carry the ID entered on the terms page. If that ID is the
+        // current Firebase master ID, keep both games connected to Firebase.
+        if (res.user_id && matchesMaster(res.user_id, masterId)) {
+          enableFirebaseMode();
+          rememberMasterId(res.user_id);
+        } else if (readRememberedId()) {
+          enableFirebaseMode();
+        }
+        const s = {
+          code: value.toUpperCase(),
+          userId: res.user_id ?? "",
+          expiresAt: res.expires_at ?? "",
+        };
+        saveSession(s);
+        addCodeToHistory(s);
+        setHistory(readCodeHistory());
+        onVerified(s);
+      } else if (res?.status === "expired") {
+        addCodeToHistory({ code: value.toUpperCase(), userId: "", expiresAt: "" });
+        setHistory(readCodeHistory());
+        setError("الكود صلاحيته منتهية");
+      } else if (res?.status === "pending") {
+        setError("بياناتك تحت المراجعة الآن");
+      } else if (res?.status === "rejected") {
+        setError("تم رفض الطلب");
+      } else {
+        setError("كود غير صحيح");
+      }
+    } catch {
+      setError("حدث خطأ، حاول مجددًا");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Overlay open={open} onClose={onClose}>
+      <div className="mb-4 flex flex-col items-center gap-2">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/50 text-primary">
+          <ShieldCheck className="h-5 w-5" />
+        </span>
+        <h3 className="text-base font-black text-foreground">إدخال كود التفعيل</h3>
+      </div>
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="XXXX-XXXX-XXXX-XXXX"
+        className="w-full rounded-xl border border-primary/40 bg-transparent px-3 py-3 text-center text-sm font-bold tracking-[0.15em] text-foreground outline-none focus:border-primary"
+      />
+      {error && <p className="mt-2 text-center text-xs font-bold text-red-400">{error}</p>}
+      <Button
+        onClick={() => verifyCode(code)}
+        disabled={busy}
+        className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-sm text-sm font-black transition active:scale-95 disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+        التحقق
+      </Button>
+
+      {history.length > 0 && (
+        <div className="mt-5 border-t border-primary/20 pt-4" dir="rtl">
+          <p className="mb-2 text-[11px] font-extrabold text-muted-foreground">
+            الأكواد اللي استخدمتها
+          </p>
+          <div className="flex flex-col gap-2">
+            {history.map((h) => {
+              const valid = isCodeValid(h);
+              return (
+                 <Button
+                  key={h.code}
+                  onClick={() => valid && verifyCode(h.code)}
+                  disabled={!valid || busy}
+                   variant="outline"
+                   className={`flex h-auto items-center justify-between gap-2 rounded-sm border px-3 py-2 text-right transition ${
+                    valid
+                      ? "border-primary/50 text-foreground active:scale-[0.98] hover:border-primary"
+                       : "border-border text-muted-foreground opacity-70"
+                  }`}
+                >
+                  <span className="font-mono text-[11px] font-bold tracking-wider">{h.code}</span>
+                  <span
+                    className={`flex items-center gap-1 text-[10px] font-black ${
+                      valid ? "text-primary" : "text-red-400"
+                    }`}
+                  >
+                    {valid ? <Clock className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    {valid ? "صالح" : "منتهي"}
+                  </span>
+                 </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </Overlay>
+  );
+
+}

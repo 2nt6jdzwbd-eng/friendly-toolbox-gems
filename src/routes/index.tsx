@@ -1,24 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
-});
+  beforeLoad: () => {
+    throw redirect({ to: "/games" });
+  },
+  head: () => ({
+    meta: [
+      { title: "كريزي سكربت crazy script | سكربت الطياره وسكربت التفاحه" },
+      {
+        name: "description",
+        content:
+          "crazy script (كريزي سكربت): سكربت الطياره Aviator وسكربت التفاحه Apple of Fortune وإشارات ألعاب 1xBet وLineBet وWinWin وUltrapari مع كود تفعيل.",
+      },
+      { property: "og:title", content: "كريزي سكربت crazy script | سكربت الطياره وسكربت التفاحه" },
+      { property: "og:description", content: "ابدأ الآن مع crazy script واحصل على كود التفعيل الخاص بك." },
+      { name: "keywords", content: "سكربت الطياره, اسكربت الطياره, سكربت التفاحه, اسكربت التفاحه, كريزي سكربت, كريزي اسكربت, crazy script, crash script, apple of fortune script" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
+  component: () => null,
+});

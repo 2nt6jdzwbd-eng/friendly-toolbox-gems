@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- The review dashboard lives only at `/shagggt`; keep all in-app admin entry points removed because the owner wants direct URL-only access.

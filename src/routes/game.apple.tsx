@@ -6,6 +6,9 @@ import { TopBar } from "@/components/TopBar";
 import { GameHeaderStats } from "@/components/GameHeaderStats";
 import { WinFeed } from "@/components/WinFeed";
 import { Button } from "@/components/ui/button";
+import closedApple from "@/assets/logo.png";
+import goodApple from "@/assets/game-apple.jpg";
+import badApple from "@/assets/game-apple-red.jpg";
 import {
   fetchAppleLayout,
   isFirebaseMode,
@@ -35,9 +38,9 @@ export const Route = createFileRoute("/game/apple")({
   component: AppleGame,
 });
 
-const CLOSED = "https://logo12.gamer.gd/cvb.png";
-const GOOD = "https://logo12.gamer.gd/apple.png";
-const BAD = "https://logo12.gamer.gd/poi.png";
+const CLOSED = closedApple;
+const GOOD = goodApple;
+const BAD = badApple;
 
 // bottom row -> top row
 const ODDS = ["1.23", "1.54", "1.93", "2.41", "4.02", "6.71", "11.18", "27.97", "69.93", "349.43"];

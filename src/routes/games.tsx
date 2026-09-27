@@ -13,11 +13,9 @@ import {
   savePendingGame,
 } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
-import appleLogo from "@/assets/apple-logo.jpg.asset.json";
-import planeLogo from "@/assets/plane-logo.jpg.asset.json";
+import apple from "@/assets/game-apple.jpg";
+import crash from "@/assets/game-crash.jpg";
 
-const crash = planeLogo.url;
-const apple = appleLogo.url;
 
 export const Route = createFileRoute("/games")({
   head: () => ({

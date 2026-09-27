@@ -46,6 +46,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-success: var(--success);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -62,26 +63,27 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 0.5rem;
+  --background: #101113;
+  --foreground: #F1F2F2;
+  --card: #1a1c1e;
+  --card-foreground: #F1F2F2;
+  --popover: #1a1c1e;
+  --popover-foreground: #F1F2F2;
+  --primary: #0EA5E9;
+  --primary-foreground: #F1F2F2;
+  --secondary: #26292d;
+  --secondary-foreground: #F1F2F2;
+  --muted: #26292d;
+  --muted-foreground: #a3a9ae;
+  --accent: #737B83;
+  --accent-foreground: #F1F2F2;
+  --destructive: oklch(0.62 0.23 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: #3b4045;
+  --input: #303439;
+  --ring: #0EA5E9;
+  --success: #22c55e;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -139,6 +141,40 @@
 
   body {
     background-color: var(--color-background);
+    background-image: none;
     color: var(--color-foreground);
+    font-family: "Barlow", "Tajawal", system-ui, sans-serif;
   }
+  h1, h2, h3 {
+    font-family: "Bebas Neue", "Tajawal", system-ui, sans-serif;
+    letter-spacing: 0;
+  }
+  button { font-family: "Barlow", "Tajawal", system-ui, sans-serif; letter-spacing: 0; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* --- app animations --- */
+@theme {
+  --animate-scale-in: cvip-scale-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: cvip-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop-in: cvip-pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cvip-scale-in {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cvip-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cvip-pop-in {
+  0% { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+

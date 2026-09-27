@@ -133,22 +133,6 @@ function AviatorGame() {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-3">
-           <Button
-            onClick={start}
-             className="h-11 flex-1 rounded-sm text-sm font-black active:scale-95"
-          >
-            <Play className="h-4 w-4" /> بدأ
-           </Button>
-           <Button
-             variant="secondary"
-            onClick={reset}
-             className="h-11 flex-1 rounded-sm border border-border text-sm font-black active:scale-95"
-          >
-            <RotateCcw className="h-4 w-4" /> اعاده بدأ
-           </Button>
-        </div>
-
         <WinFeed />
 
         <p className="mt-10 text-center text-xs text-muted-foreground">
